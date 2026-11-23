@@ -17,19 +17,19 @@ header h1{font-size:clamp(26px,3.4vw,58px);font-weight:900;letter-spacing:-1px}
 header h1 span{color:#facc15}
 .clock{font-size:clamp(18px,2vw,34px);font-weight:700;color:#c7d2fe;text-align:right}
 .clock small{display:block;font-size:.5em;color:#818cf8;font-weight:500}
-main{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:2vw;min-height:0}
-.board{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:28px;padding:2.2vh 1.6vw;display:flex;flex-direction:column;min-height:0}
-.bhead{display:flex;align-items:center;gap:1.2vw;margin-bottom:1.6vh}
-.bhead .t{flex:1}
-.bhead h2{font-size:clamp(22px,2.4vw,42px);font-weight:900}
-.bhead p{font-size:clamp(13px,1vw,18px);color:#a5b4fc;font-weight:500}
+main{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vw;min-height:0}
+.board{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:28px;padding:2.2vh 1.2vw;display:flex;flex-direction:column;min-height:0}
+.bhead{display:flex;align-items:center;gap:1vw;margin-bottom:1.6vh}
+.bhead .t{flex:1;min-width:0}
+.bhead h2{font-size:clamp(20px,1.9vw,36px);font-weight:900}
+.bhead p{font-size:clamp(12px,.85vw,16px);color:#a5b4fc;font-weight:500}
 .qr{background:#fff;border-radius:14px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}
-.qr div{width:clamp(70px,7vw,120px);height:clamp(70px,7vw,120px)}
+.qr div{width:clamp(64px,5.6vw,104px);height:clamp(64px,5.6vw,104px)}
 .qr div img,.qr div canvas{width:100% !important;height:100% !important}
 .qr b{color:#1f2937;font-size:clamp(10px,.75vw,13px);font-weight:900}
 .list{display:grid;gap:.9vh;align-content:start}
-.row{display:grid;grid-template-columns:3.2em 1fr auto;align-items:center;gap:1vw;background:rgba(255,255,255,.05);border-radius:16px;
-  padding:1vh 1.1vw;font-size:clamp(16px,1.6vw,30px);animation:slide .4s ease-out;border:2px solid transparent}
+.row{display:grid;grid-template-columns:2.6em 1fr auto;align-items:center;gap:.8vw;background:rgba(255,255,255,.05);border-radius:16px;
+  padding:1vh .9vw;font-size:clamp(15px,1.35vw,26px);animation:slide .4s ease-out;border:2px solid transparent}
 .row .rk{font-weight:900;text-align:center;color:#94a3b8}
 .row .nm{font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .nm small{display:block;font-size:.5em;color:#a5b4fc;font-weight:500}
@@ -72,6 +72,14 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
     <div class="list" id="listSpace"></div>
     <div class="count" id="countSpace"></div>
   </section>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>🏰 구구단 가디언즈</h2><p>보통 난이도 · 점수 → 첫 시도 정답률 → 방어 웨이브 순서</p></div>
+      <div class="qr"><div id="qrGugudan"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listGugudan"></div>
+    <div class="count" id="countGugudan"></div>
+  </section>
 </main>
 <footer>
   <span class="status" id="status"><i></i><span>연결 중…</span></span>
@@ -86,11 +94,24 @@ const fmt = ms=>{ const s = Math.round(ms/1000); return s>=60 ? `${Math.floor(s/
 const LINKS = {
   spacing:'https://moodoocoding.github.io/261123_spacing-champion/',
   space:'https://moodoocoding.github.io/261123_space-conqueror/',
-  weather:'https://moodoocoding.github.io/261123_weather-simulator/'
+  weather:'https://moodoocoding.github.io/261123_weather-simulator/',
+  gugudan:'https://261123-gugudan-guardians.vercel.app/'
 };
+// 구구단 가디언즈는 자기 서버(Vercel)가 순위를 관리해서, 그 서버의 공개 순위를 15초마다 읽어 와요
+const GUGUDAN_API = 'https://261123-gugudan-guardians.vercel.app/api/leaderboard?scope=global&mode=normal&period=today&limit=10';
+let gugudan = {rows:[], ok:null};
+async function loadGugudan(){
+  try{
+    const r = await fetch(GUGUDAN_API,{cache:'no-store'});
+    if(!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    gugudan = {rows:Array.isArray(j.records) ? j.records : [], ok:true};
+  }catch(e){ console.warn('구구단 순위를 불러오지 못했어요',e); gugudan.ok = false; }
+  render();
+}
 // QR 코드 (인터넷이 없으면 그리지 못해요)
 function qr(id,url){ try{ new QRCode($(id),{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ $(id).parentNode.style.display = 'none'; } }
-qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather);
+qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather); qr('qrGugudan',LINKS.gugudan);
 
 const spacing = createBoard('spacing'), space = createBoard('space');
 const spSort = (a,b)=>(b.c/b.n - a.c/a.n) || (b.c - a.c) || (a.t - b.t) || (a.at - b.at);
@@ -111,14 +132,25 @@ function render(){
     <span class="sc">${fmt(scScore(r))}</span></div>`).join('') : '<p class="empty">첫 번째 우주정복자를 기다려요!</p>';
   $('countSpacing').textContent = `오늘 도전 ${a.length}명`;
   $('countSpace').textContent = `오늘 정복 ${b.length}명`;
-  const on = spacing.online && space.online;
+  // 구구단: 서버가 이미 순위대로 정렬해서 보내 줘요
+  const g = gugudan.rows;
+  $('listGugudan').innerHTML = g.length ? g.slice(0,10).map((r,i)=>{ const nw = Date.now()-r.created_at < 60000;
+    const acc = r.attempts ? Math.round(r.correct/r.attempts*100) : 0;
+    return `<div class="row r${i+1} ${nw?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.nickname)}${nw?'<span class="new-tag">NEW</span>':''}<small>웨이브 ${r.wave}${r.victory?' · 🏆 승리':''} · 첫 시도 정답률 ${acc}%</small></span>
+    <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`; }).join('')
+    : `<p class="empty">${gugudan.ok===false ? '구구단 순위를 불러오는 중이에요…' : '첫 번째 가디언을 기다려요!'}</p>`;
+  $('countGugudan').textContent = gugudan.ok===false ? '연결을 다시 시도하고 있어요' : `오늘 순위 ${g.length}명`;
+  const on = spacing.online && space.online && gugudan.ok!==false;
   $('status').className = 'status'+(on?' on':'');
   $('status').lastElementChild.textContent = on ? '실시간 연결됨 · 새 기록이 들어오면 바로 바뀌어요' : '인터넷 연결을 확인해 주세요 (이 기기 기록만 보여요)';
 }
 spacing.onChange(render); space.onChange(render);
 spacing.init(); space.init();
 render();
-setInterval(render,15000);   // NEW 표시가 1분 뒤 사라지도록 가끔 다시 그려요
+loadGugudan();
+setInterval(loadGugudan,15000);   // 구구단 순위를 15초마다 새로 읽고, NEW 표시도 1분 뒤 사라지도록 다시 그려요
 
 function tick(){
   const d = new Date();
