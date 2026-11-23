@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 랭킹 · AI 체험 부스</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#f8fafc;min-height:100vh;
+  background:radial-gradient(ellipse at top,#1e1b4b 0%,#0b1020 60%);padding:2.2vh 2.2vw;display:flex;flex-direction:column;gap:2vh}
+@keyframes flash{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,0)}50%{box-shadow:0 0 0 .5vh rgba(250,204,21,.55)}}
+@keyframes slide{0%{transform:translateX(-30px);opacity:0}100%{transform:none;opacity:1}}
+header{display:flex;align-items:center;justify-content:space-between;gap:2vw}
+header h1{font-size:clamp(26px,3.4vw,58px);font-weight:900;letter-spacing:-1px}
+header h1 span{color:#facc15}
+.clock{font-size:clamp(18px,2vw,34px);font-weight:700;color:#c7d2fe;text-align:right}
+.clock small{display:block;font-size:.5em;color:#818cf8;font-weight:500}
+main{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:2vw;min-height:0}
+.board{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:28px;padding:2.2vh 1.6vw;display:flex;flex-direction:column;min-height:0}
+.bhead{display:flex;align-items:center;gap:1.2vw;margin-bottom:1.6vh}
+.bhead .t{flex:1}
+.bhead h2{font-size:clamp(22px,2.4vw,42px);font-weight:900}
+.bhead p{font-size:clamp(13px,1vw,18px);color:#a5b4fc;font-weight:500}
+.qr{background:#fff;border-radius:14px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}
+.qr div{width:clamp(70px,7vw,120px);height:clamp(70px,7vw,120px)}
+.qr div img,.qr div canvas{width:100% !important;height:100% !important}
+.qr b{color:#1f2937;font-size:clamp(10px,.75vw,13px);font-weight:900}
+.list{display:grid;gap:.9vh;align-content:start}
+.row{display:grid;grid-template-columns:3.2em 1fr auto;align-items:center;gap:1vw;background:rgba(255,255,255,.05);border-radius:16px;
+  padding:1vh 1.1vw;font-size:clamp(16px,1.6vw,30px);animation:slide .4s ease-out;border:2px solid transparent}
+.row .rk{font-weight:900;text-align:center;color:#94a3b8}
+.row .nm{font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .nm small{display:block;font-size:.5em;color:#a5b4fc;font-weight:500}
+.row .sc{font-weight:900;color:#facc15;white-space:nowrap}
+.row.r1{background:linear-gradient(90deg,rgba(250,204,21,.28),rgba(250,204,21,.06));border-color:rgba(250,204,21,.6)}
+.row.r2{background:linear-gradient(90deg,rgba(203,213,225,.2),rgba(203,213,225,.04))}
+.row.r3{background:linear-gradient(90deg,rgba(251,146,60,.22),rgba(251,146,60,.04))}
+.row.new{animation:slide .4s ease-out,flash 1s 4;border-color:#facc15}
+.row .new-tag{font-size:.5em;background:#facc15;color:#1e1b4b;border-radius:6px;padding:1px 6px;margin-left:8px;vertical-align:.3em}
+.empty{color:#94a3b8;font-size:clamp(16px,1.5vw,26px);text-align:center;padding:6vh 0;font-weight:700}
+.count{margin-top:auto;padding-top:1.2vh;font-size:clamp(12px,1vw,18px);color:#94a3b8;text-align:right}
+footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;font-size:clamp(12px,1vw,18px);color:#94a3b8}
+.status{display:inline-flex;align-items:center;gap:8px}
+.status i{width:12px;height:12px;border-radius:50%;background:#f59e0b}
+.status.on i{background:#22c55e;box-shadow:0 0 10px #22c55e}
+.extra{display:flex;align-items:center;gap:12px}
+.extra .qr div{width:clamp(56px,4.5vw,80px);height:clamp(56px,4.5vw,80px)}
+@media (max-width:900px){ main{grid-template-columns:1fr} body{padding:14px} }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏆 오늘의 <span>랭킹</span> · AI 체험 부스</h1>
+  <div class="clock" id="clock"></div>
+</header>
+<main>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>✏️ 띄어쓰기 1등은 누구?</h2><p>정답률 → 맞힌 수 → 빨리 푼 순서</p></div>
+      <div class="qr"><div id="qrSpacing"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listSpacing"></div>
+    <div class="count" id="countSpacing"></div>
+  </section>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>🚀 우주정복자</h2><p>8개 행성 정복 시간 + 틀린 답마다 10초 (짧을수록 1등)</p></div>
+      <div class="qr"><div id="qrSpace"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listSpace"></div>
+    <div class="count" id="countSpace"></div>
+  </section>
+</main>
+<footer>
+  <span class="status" id="status"><i></i><span>연결 중…</span></span>
+  <div class="extra"><span>🌤️ 날씨 시뮬레이터도 해 보세요</span><div class="qr"><div id="qrWeather"></div></div></div>
+</footer>
+
+<script src="board.js"></script>
+<script>
+const $ = id=>document.getElementById(id);
+const esc = s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = ms=>{ const s = Math.round(ms/1000); return s>=60 ? `${Math.floor(s/60)}분 ${s%60}초` : `${s}초`; };
+const LINKS = {
+  spacing:'https://moodoocoding.github.io/261123_spacing-champion/',
+  space:'https://moodoocoding.github.io/261123_space-conqueror/',
+  weather:'https://moodoocoding.github.io/261123_weather-simulator/'
+};
+// QR 코드 (인터넷이 없으면 그리지 못해요)
+function qr(id,url){ try{ new QRCode($(id),{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ $(id).parentNode.style.display = 'none'; } }
+qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather);
+
+const spacing = createBoard('spacing'), space = createBoard('space');
+const spSort = (a,b)=>(b.c/b.n - a.c/a.n) || (b.c - a.c) || (a.t - b.t) || (a.at - b.at);
+const scScore = r=>r.t+r.wrong*10000;
+const scSort = (a,b)=>scScore(a)-scScore(b) || a.at-b.at;
+const isNew = r=>Date.now()-r.at < 60000;   // 1분 안에 들어온 기록은 반짝여요
+const medal = i=>i<3 ? ['🥇','🥈','🥉'][i] : (i+1);
+
+function render(){
+  const a = spacing.today().sort(spSort), b = space.today().sort(scSort);
+  $('listSpacing').innerHTML = a.length ? a.slice(0,10).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>정답률 ${Math.round(r.c/r.n*100)}% · ${fmt(r.t)}${r.d==='hard'?' · 도전':''}</small></span>
+    <span class="sc">${r.c}/${r.n}</span></div>`).join('') : '<p class="empty">첫 번째 도전자를 기다려요!</p>';
+  $('listSpace').innerHTML = b.length ? b.slice(0,10).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${fmt(r.t)} · 틀린 답 ${r.wrong}번</small></span>
+    <span class="sc">${fmt(scScore(r))}</span></div>`).join('') : '<p class="empty">첫 번째 우주정복자를 기다려요!</p>';
+  $('countSpacing').textContent = `오늘 도전 ${a.length}명`;
+  $('countSpace').textContent = `오늘 정복 ${b.length}명`;
+  const on = spacing.online && space.online;
+  $('status').className = 'status'+(on?' on':'');
+  $('status').lastElementChild.textContent = on ? '실시간 연결됨 · 새 기록이 들어오면 바로 바뀌어요' : '인터넷 연결을 확인해 주세요 (이 기기 기록만 보여요)';
+}
+spacing.onChange(render); space.onChange(render);
+spacing.init(); space.init();
+render();
+setInterval(render,15000);   // NEW 표시가 1분 뒤 사라지도록 가끔 다시 그려요
+
+function tick(){
+  const d = new Date();
+  $('clock').innerHTML = d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Seoul'})
+    +`<small>${d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short',timeZone:'Asia/Seoul'})}</small>`;
+}
+tick(); setInterval(tick,10000);
+</script>
+</body>
+</html>
