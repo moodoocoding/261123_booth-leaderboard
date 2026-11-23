@@ -120,27 +120,30 @@ const scSort = (a,b)=>scScore(a)-scScore(b) || a.at-b.at;
 const isNew = r=>Date.now()-r.at < 60000;   // 1분 안에 들어온 기록은 반짝여요
 const medal = i=>i<3 ? ['🥇','🥈','🥉'][i] : (i+1);
 
+// 내용이 바뀐 칸만 다시 그려요 (15초마다 전체가 깜빡이지 않게)
+const lastHTML = {};
+function put(id,html){ if(lastHTML[id]!==html){ lastHTML[id] = html; $(id).innerHTML = html; } }
 function render(){
   const a = spacing.today().sort(spSort), b = space.today().sort(scSort);
-  $('listSpacing').innerHTML = a.length ? a.slice(0,10).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+  put('listSpacing', a.length ? a.slice(0,10).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
     <span class="rk">${medal(i)}</span>
     <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>정답률 ${Math.round(r.c/r.n*100)}% · ${fmt(r.t)}${r.d==='hard'?' · 도전':''}</small></span>
-    <span class="sc">${r.c}/${r.n}</span></div>`).join('') : '<p class="empty">첫 번째 도전자를 기다려요!</p>';
-  $('listSpace').innerHTML = b.length ? b.slice(0,10).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="sc">${r.c}/${r.n}</span></div>`).join('') : '<p class="empty">첫 번째 도전자를 기다려요!</p>');
+  put('listSpace', b.length ? b.slice(0,10).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
     <span class="rk">${medal(i)}</span>
     <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${fmt(r.t)} · 틀린 답 ${r.wrong}번</small></span>
-    <span class="sc">${fmt(scScore(r))}</span></div>`).join('') : '<p class="empty">첫 번째 우주정복자를 기다려요!</p>';
+    <span class="sc">${fmt(scScore(r))}</span></div>`).join('') : '<p class="empty">첫 번째 우주정복자를 기다려요!</p>');
   $('countSpacing').textContent = `오늘 도전 ${a.length}명`;
   $('countSpace').textContent = `오늘 정복 ${b.length}명`;
   // 구구단: 서버가 이미 순위대로 정렬해서 보내 줘요
   const g = gugudan.rows;
-  $('listGugudan').innerHTML = g.length ? g.slice(0,10).map((r,i)=>{ const nw = Date.now()-r.created_at < 60000;
+  put('listGugudan', g.length ? g.slice(0,10).map((r,i)=>{ const nw = Date.now()-r.created_at < 60000;
     const acc = r.attempts ? Math.round(r.correct/r.attempts*100) : 0;
     return `<div class="row r${i+1} ${nw?'new':''}">
     <span class="rk">${medal(i)}</span>
     <span class="nm">${esc(r.nickname)}${nw?'<span class="new-tag">NEW</span>':''}<small>웨이브 ${r.wave}${r.victory?' · 🏆 승리':''} · 첫 시도 정답률 ${acc}%</small></span>
     <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`; }).join('')
-    : `<p class="empty">${gugudan.ok===false ? '구구단 순위를 불러오는 중이에요…' : '첫 번째 가디언을 기다려요!'}</p>`;
+    : `<p class="empty">${gugudan.ok===false ? '구구단 순위를 불러오는 중이에요…' : '첫 번째 가디언을 기다려요!'}</p>`);
   $('countGugudan').textContent = gugudan.ok===false ? '연결을 다시 시도하고 있어요' : `오늘 순위 ${g.length}명`;
   const on = spacing.online && space.online && gugudan.ok!==false;
   $('status').className = 'status'+(on?' on':'');
