@@ -17,19 +17,19 @@ header h1{font-size:clamp(26px,3.4vw,58px);font-weight:900;letter-spacing:-1px}
 header h1 span{color:#facc15}
 .clock{font-size:clamp(18px,2vw,34px);font-weight:700;color:#c7d2fe;text-align:right}
 .clock small{display:block;font-size:.5em;color:#818cf8;font-weight:500}
-main{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vw;min-height:0}
-.board{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:28px;padding:2.2vh 1.2vw;display:flex;flex-direction:column;min-height:0}
+main{flex:1;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:1.1vw;min-height:0}
+.board{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:28px;padding:2.2vh 1vw;display:flex;flex-direction:column;min-height:0}
 .bhead{display:flex;align-items:center;gap:1vw;margin-bottom:1.6vh}
 .bhead .t{flex:1;min-width:0}
-.bhead h2{font-size:clamp(20px,1.9vw,36px);font-weight:900}
+.bhead h2{font-size:clamp(18px,1.5vw,32px);font-weight:900}
 .bhead p{font-size:clamp(12px,.85vw,16px);color:#a5b4fc;font-weight:500}
 .qr{background:#fff;border-radius:14px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}
-.qr div{width:clamp(64px,5.6vw,104px);height:clamp(64px,5.6vw,104px)}
+.qr div{width:clamp(56px,4.4vw,96px);height:clamp(56px,4.4vw,96px)}
 .qr div img,.qr div canvas{width:100% !important;height:100% !important}
 .qr b{color:#1f2937;font-size:clamp(10px,.75vw,13px);font-weight:900}
 .list{display:grid;gap:.9vh;align-content:start}
 .row{display:grid;grid-template-columns:2.6em 1fr auto;align-items:center;gap:.8vw;background:rgba(255,255,255,.05);border-radius:16px;
-  padding:1vh .9vw;font-size:clamp(15px,1.35vw,26px);animation:slide .4s ease-out;border:2px solid transparent}
+  padding:1vh .7vw;font-size:clamp(14px,1.15vw,24px);animation:slide .4s ease-out;border:2px solid transparent}
 .row .rk{font-weight:900;text-align:center;color:#94a3b8}
 .row .nm{font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .nm small{display:block;font-size:.5em;color:#a5b4fc;font-weight:500}
@@ -47,7 +47,7 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
 .status.on i{background:#22c55e;box-shadow:0 0 10px #22c55e}
 .extra{display:flex;align-items:center;gap:12px}
 .extra .qr div{width:clamp(56px,4.5vw,80px);height:clamp(56px,4.5vw,80px)}
-@media (max-width:900px){ main{grid-template-columns:1fr} body{padding:14px} }
+@media (max-width:900px){ main{grid-auto-flow:row;grid-template-columns:1fr} body{padding:14px} }
 </style>
 </head>
 <body>
@@ -80,6 +80,14 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
     <div class="list" id="listGugudan"></div>
     <div class="count" id="countGugudan"></div>
   </section>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>🧩 블록 퍼즐 챔피언</h2><p>점수가 높은 순서 (같으면 빨리 끝낸 순서)</p></div>
+      <div class="qr"><div id="qrBlock"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listBlock"></div>
+    <div class="count" id="countBlock"></div>
+  </section>
 </main>
 <footer>
   <span class="status" id="status"><i></i><span>연결 중…</span></span>
@@ -95,7 +103,8 @@ const LINKS = {
   spacing:'https://moodoocoding.github.io/261123_spacing-champion/',
   space:'https://moodoocoding.github.io/261123_space-conqueror/',
   weather:'https://moodoocoding.github.io/261123_weather-simulator/',
-  gugudan:'https://261123-gugudan-guardians.vercel.app/'
+  gugudan:'https://261123-gugudan-guardians.vercel.app/',
+  block:'https://moodoocoding.github.io/261123_block-puzzle/'
 };
 // 구구단 가디언즈는 자기 서버(Vercel)가 순위를 관리해서, 그 서버의 공개 순위를 15초마다 읽어 와요
 const GUGUDAN_API = 'https://261123-gugudan-guardians.vercel.app/api/leaderboard?scope=global&mode=normal&period=today&limit=10';
@@ -111,12 +120,13 @@ async function loadGugudan(){
 }
 // QR 코드 (인터넷이 없으면 그리지 못해요)
 function qr(id,url){ try{ new QRCode($(id),{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ $(id).parentNode.style.display = 'none'; } }
-qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather); qr('qrGugudan',LINKS.gugudan);
+qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block);
 
-const spacing = createBoard('spacing'), space = createBoard('space');
+const spacing = createBoard('spacing'), space = createBoard('space'), block = createBoard('block');
 const spSort = (a,b)=>(b.c/b.n - a.c/a.n) || (b.c - a.c) || (a.t - b.t) || (a.at - b.at);
 const scScore = r=>r.t+r.wrong*10000;
 const scSort = (a,b)=>scScore(a)-scScore(b) || a.at-b.at;
+const blSort = (a,b)=>b.score-a.score || a.t-b.t || a.at-b.at;
 const isNew = r=>Date.now()-r.at < 60000;   // 1분 안에 들어온 기록은 반짝여요
 const medal = i=>i<3 ? ['🥇','🥈','🥉'][i] : (i+1);
 
@@ -124,7 +134,7 @@ const medal = i=>i<3 ? ['🥇','🥈','🥉'][i] : (i+1);
 const lastHTML = {};
 function put(id,html){ if(lastHTML[id]!==html){ lastHTML[id] = html; $(id).innerHTML = html; } }
 function render(){
-  const a = spacing.today().sort(spSort), b = space.today().sort(scSort);
+  const a = spacing.today().sort(spSort), b = space.today().sort(scSort), c = block.today().sort(blSort);
   put('listSpacing', a.length ? a.slice(0,10).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
     <span class="rk">${medal(i)}</span>
     <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>정답률 ${Math.round(r.c/r.n*100)}% · ${fmt(r.t)}${r.d==='hard'?' · 도전':''}</small></span>
@@ -135,6 +145,11 @@ function render(){
     <span class="sc">${fmt(scScore(r))}</span></div>`).join('') : '<p class="empty">첫 번째 우주정복자를 기다려요!</p>');
   $('countSpacing').textContent = `오늘 도전 ${a.length}명`;
   $('countSpace').textContent = `오늘 정복 ${b.length}명`;
+  put('listBlock', c.length ? c.slice(0,10).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${fmt(r.t)} 동안 했어요</small></span>
+    <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`).join('') : '<p class="empty">첫 번째 챔피언을 기다려요!</p>');
+  $('countBlock').textContent = `오늘 도전 ${c.length}명`;
   // 구구단: 서버가 이미 순위대로 정렬해서 보내 줘요
   const g = gugudan.rows;
   put('listGugudan', g.length ? g.slice(0,10).map((r,i)=>{ const nw = Date.now()-r.created_at < 60000;
@@ -145,12 +160,12 @@ function render(){
     <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`; }).join('')
     : `<p class="empty">${gugudan.ok===false ? '구구단 순위를 불러오는 중이에요…' : '첫 번째 가디언을 기다려요!'}</p>`);
   $('countGugudan').textContent = gugudan.ok===false ? '연결을 다시 시도하고 있어요' : `오늘 순위 ${g.length}명`;
-  const on = spacing.online && space.online && gugudan.ok!==false;
+  const on = spacing.online && space.online && block.online && gugudan.ok!==false;
   $('status').className = 'status'+(on?' on':'');
   $('status').lastElementChild.textContent = on ? '실시간 연결됨 · 새 기록이 들어오면 바로 바뀌어요' : '인터넷 연결을 확인해 주세요 (이 기기 기록만 보여요)';
 }
-spacing.onChange(render); space.onChange(render);
-spacing.init(); space.init();
+spacing.onChange(render); space.onChange(render); block.onChange(render);
+spacing.init(); space.init(); block.init();
 render();
 loadGugudan();
 setInterval(loadGugudan,15000);   // 구구단 순위를 15초마다 새로 읽고, NEW 표시도 1분 뒤 사라지도록 다시 그려요
