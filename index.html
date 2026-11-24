@@ -17,7 +17,7 @@ header h1{font-size:clamp(26px,3.4vw,58px);font-weight:900;letter-spacing:-1px}
 header h1 span{color:#facc15}
 .clock{font-size:clamp(18px,2vw,34px);font-weight:700;color:#c7d2fe;text-align:right}
 .clock small{display:block;font-size:.5em;color:#818cf8;font-weight:500}
-main{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:1.4vh 1.1vw;min-height:0}
+main{flex:1;display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:1.4vh 1.1vw;min-height:0}
 .board{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:1.4vh 1vw;display:flex;flex-direction:column;min-height:0}
 .bhead{display:flex;align-items:center;gap:1vw;margin-bottom:.9vh}
 .bhead .t{flex:1;min-width:0}
@@ -104,6 +104,14 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
     <div class="list" id="listSwing"></div>
     <div class="count" id="countSwing"></div>
   </section>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>🎧 비트스매시 클럽</h2><p>점수가 높은 순서 (같으면 최대 콤보 순서)</p></div>
+      <div class="qr"><div id="qrBeat"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listBeat"></div>
+    <div class="count" id="countBeat"></div>
+  </section>
 </main>
 <footer>
   <span class="status" id="status"><i></i><span>연결 중…</span></span>
@@ -122,7 +130,8 @@ const LINKS = {
   gugudan:'https://261123-gugudan-guardians.vercel.app/',
   block:'https://moodoocoding.github.io/261123_block-puzzle/',
   fight:'https://moodoocoding.github.io/261123_math-fighter/',
-  swing:'https://moodoocoding.github.io/261123_rope-swing/'
+  swing:'https://moodoocoding.github.io/261123_rope-swing/',
+  beat:'https://moodoocoding.github.io/261123_beat-smash/'
 };
 // 구구단 가디언즈는 자기 서버(Vercel)가 순위를 관리해서, 그 서버의 공개 순위를 15초마다 읽어 와요
 const GUGUDAN_API = 'https://261123-gugudan-guardians.vercel.app/api/leaderboard?scope=global&mode=normal&period=today&limit=10';
@@ -138,13 +147,17 @@ async function loadGugudan(){
 }
 // QR 코드 (인터넷이 없으면 그리지 못해요)
 function qr(id,url){ try{ new QRCode($(id),{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ $(id).parentNode.style.display = 'none'; } }
-qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block); qr('qrFight',LINKS.fight); qr('qrSwing',LINKS.swing);
+qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block); qr('qrFight',LINKS.fight); qr('qrSwing',LINKS.swing); qr('qrBeat',LINKS.beat);
+// 게임 칸을 두 줄로 나눠요 (칸이 늘어나면 한 줄에 들어가는 칸 수도 함께 늘어나요)
+document.querySelector('main').style.setProperty('--cols',Math.ceil(document.querySelectorAll('main .board').length/2));
 
-const spacing = createBoard('spacing'), space = createBoard('space'), block = createBoard('block'), fight = createBoard('fight'), swing = createBoard('swing');
+const spacing = createBoard('spacing'), space = createBoard('space'), block = createBoard('block'), fight = createBoard('fight'), swing = createBoard('swing'), beat = createBoard('beat');
 const spSort = (a,b)=>(b.c/b.n - a.c/a.n) || (b.c - a.c) || (a.t - b.t) || (a.at - b.at);
 const scScore = r=>r.t+r.wrong*10000;
 const scSort = (a,b)=>scScore(a)-scScore(b) || a.at-b.at;
 const blSort = (a,b)=>b.score-a.score || a.t-b.t || a.at-b.at;
+const btSort = (a,b)=>b.score-a.score || b.combo-a.combo || a.at-b.at;
+const BEAT_MODE = {chill:'🌸 이지',club:'🔥 클럽',hyper:'⚡ 하이퍼'};
 const isNew = r=>Date.now()-r.at < 60000;   // 1분 안에 들어온 기록은 반짝여요
 const TOP = 10;  // 최대 10등까지. 화면 높이에 다 안 들어가면 들어가는 만큼만 보여요 (put 참고)
 const medal = i=>i<3 ? ['🥇','🥈','🥉'][i] : (i+1);
@@ -186,6 +199,12 @@ function render(){
     <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${r.stage>=5?'🏆 5스테이지 완주':r.stage+'스테이지 통과'} · ${fmt(r.t)}</small></span>
     <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`).join('') : '<p class="empty">첫 번째 스윙왕을 기다려요!</p>');
   $('countSwing').textContent = `오늘 도전 ${w.length}명`;
+  const bt = beat.today().sort(btSort);
+  put('listBeat', bt.length ? bt.slice(0,TOP).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${BEAT_MODE[r.m]||''} · 최대 ${r.combo}콤보</small></span>
+    <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`).join('') : '<p class="empty">첫 번째 리듬왕을 기다려요!</p>');
+  $('countBeat').textContent = `오늘 도전 ${bt.length}명`;
   // 구구단: 서버가 이미 순위대로 정렬해서 보내 줘요
   const g = gugudan.rows;
   put('listGugudan', g.length ? g.slice(0,TOP).map((r,i)=>{ const nw = Date.now()-r.created_at < 60000;
@@ -196,11 +215,11 @@ function render(){
     <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`; }).join('')
     : `<p class="empty">${gugudan.ok===false ? '구구단 순위를 불러오는 중이에요…' : '첫 번째 가디언을 기다려요!'}</p>`);
   $('countGugudan').textContent = gugudan.ok===false ? '연결을 다시 시도하고 있어요' : `오늘 순위 ${g.length}명`;
-  const on = spacing.online && space.online && block.online && fight.online && swing.online && gugudan.ok!==false;
+  const on = spacing.online && space.online && block.online && fight.online && swing.online && beat.online && gugudan.ok!==false;
   $('status').className = 'status'+(on?' on':'');
   $('status').lastElementChild.textContent = on ? '실시간 연결됨 · 새 기록이 들어오면 바로 바뀌어요' : '인터넷 연결을 확인해 주세요 (이 기기 기록만 보여요)';
 }
-[spacing,space,block,fight,swing].forEach(b=>{ b.onChange(render); b.init(); });
+[spacing,space,block,fight,swing,beat].forEach(b=>{ b.onChange(render); b.init(); });
 render();
 loadGugudan();
 setInterval(loadGugudan,15000);   // 구구단 순위를 15초마다 새로 읽고, NEW 표시도 1분 뒤 사라지도록 다시 그려요
