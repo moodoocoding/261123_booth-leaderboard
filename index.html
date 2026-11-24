@@ -153,6 +153,14 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
     <div class="list" id="listRunner"></div>
     <div class="count" id="countRunner"></div>
   </section>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>🧠 트리플 퀴즈 쇼</h2><p>점수가 높은 순서 (상식·연산·아재개그 12문제)</p></div>
+      <div class="qr"><div id="qrQuiz"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listQuiz"></div>
+    <div class="count" id="countQuiz"></div>
+  </section>
 </main>
 <footer>
   <span class="status" id="status"><i></i><span>연결 중…</span></span>
@@ -176,7 +184,8 @@ const LINKS = {
   core:'https://moodoocoding.github.io/261123_core-defense/',
   capital:'https://moodoocoding.github.io/261123_capital-quiz/',
   brain:'https://moodoocoding.github.io/261123_brain-dash/',
-  runner:'https://moodoocoding.github.io/261123_quiz-runner/'
+  runner:'https://moodoocoding.github.io/261123_quiz-runner/',
+  quiz:'https://moodoocoding.github.io/261123_triple-quiz-show/'
 };
 // 구구단 가디언즈는 자기 서버(Vercel)가 순위를 관리해서, 그 서버의 공개 순위를 15초마다 읽어 와요
 const GUGUDAN_API = 'https://261123-gugudan-guardians.vercel.app/api/leaderboard?scope=global&mode=normal&period=today&limit=10';
@@ -192,14 +201,14 @@ async function loadGugudan(){
 }
 // QR 코드 (인터넷이 없으면 그리지 못해요)
 function qr(id,url){ try{ new QRCode($(id),{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ $(id).parentNode.style.display = 'none'; } }
-qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block); qr('qrFight',LINKS.fight); qr('qrSwing',LINKS.swing); qr('qrCore',LINKS.core); qr('qrBeat',LINKS.beat); qr('qrCapital',LINKS.capital); qr('qrBrain',LINKS.brain); qr('qrRunner',LINKS.runner);
+qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block); qr('qrFight',LINKS.fight); qr('qrSwing',LINKS.swing); qr('qrCore',LINKS.core); qr('qrQuiz',LINKS.quiz); qr('qrBeat',LINKS.beat); qr('qrCapital',LINKS.capital); qr('qrBrain',LINKS.brain); qr('qrRunner',LINKS.runner);
 // 게임 칸을 두 줄로 나눠요 (칸이 늘어나면 한 줄에 들어가는 칸 수도 함께 늘어나요)
 // 여덟 칸보다 많으면 칸이 좁아지므로 '촘촘 모드'로 바꿔요: 이름과 점수만 크게, 자세한 설명은 숨김
 const nBoards = document.querySelectorAll('main .board').length;
 document.querySelector('main').style.setProperty('--cols',Math.ceil(nBoards/2));
 document.querySelector('main').classList.toggle('dense',nBoards>8);
 
-const spacing = createBoard('spacing'), space = createBoard('space'), block = createBoard('block'), fight = createBoard('fight'), swing = createBoard('swing'), beat = createBoard('beat'), coreB = createBoard('core'), capital = createBoard('capital'), brain = createBoard('brain'), runner = createBoard('runner');
+const spacing = createBoard('spacing'), space = createBoard('space'), block = createBoard('block'), fight = createBoard('fight'), swing = createBoard('swing'), beat = createBoard('beat'), coreB = createBoard('core'), quizB = createBoard('quiz'), capital = createBoard('capital'), brain = createBoard('brain'), runner = createBoard('runner');
 const spSort = (a,b)=>(b.c/b.n - a.c/a.n) || (b.c - a.c) || (a.t - b.t) || (a.at - b.at);
 const scScore = r=>r.t+r.wrong*10000;
 const scSort = (a,b)=>scScore(a)-scScore(b) || a.at-b.at;
@@ -278,6 +287,12 @@ function render(){
     <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>퀴즈 ${r.c}개 정답</small></span>
     <span class="sc">${(r.t/1000).toFixed(2)}초</span></div>`).join('') : '<p class="empty">첫 번째 달리기왕을 기다려요!</p>');
   $('countRunner').textContent = `오늘 도전 ${rn.length}명`;
+  const qz = quizB.today().sort(blSort);
+  put('listQuiz', qz.length ? qz.slice(0,TOP).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${r.c}/12 정답${r.c>=12?' · 🏆 만점':''} · ${fmt(r.t)}</small></span>
+    <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`).join('') : '<p class="empty">첫 번째 퀴즈왕을 기다려요!</p>');
+  $('countQuiz').textContent = `오늘 도전 ${qz.length}명`;
   // 구구단: 서버가 이미 순위대로 정렬해서 보내 줘요
   const g = gugudan.rows;
   put('listGugudan', g.length ? g.slice(0,TOP).map((r,i)=>{ const nw = Date.now()-r.created_at < 60000;
@@ -288,11 +303,11 @@ function render(){
     <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`; }).join('')
     : `<p class="empty">${gugudan.ok===false ? '구구단 순위를 불러오는 중이에요…' : '첫 번째 가디언을 기다려요!'}</p>`);
   $('countGugudan').textContent = gugudan.ok===false ? '연결을 다시 시도하고 있어요' : `오늘 순위 ${g.length}명`;
-  const on = spacing.online && space.online && block.online && fight.online && swing.online && beat.online && coreB.online && capital.online && brain.online && runner.online && gugudan.ok!==false;
+  const on = spacing.online && space.online && block.online && fight.online && swing.online && beat.online && coreB.online && capital.online && brain.online && runner.online && quizB.online && gugudan.ok!==false;
   $('status').className = 'status'+(on?' on':'');
   $('status').lastElementChild.textContent = on ? '실시간 연결됨 · 새 기록이 들어오면 바로 바뀌어요' : '인터넷 연결을 확인해 주세요 (이 기기 기록만 보여요)';
 }
-[spacing,space,block,fight,swing,beat,coreB,capital,brain,runner].forEach(b=>{ b.onChange(render); b.init(); });
+[spacing,space,block,fight,swing,beat,coreB,capital,brain,runner,quizB].forEach(b=>{ b.onChange(render); b.init(); });
 render();
 loadGugudan();
 setInterval(loadGugudan,15000);   // 구구단 순위를 15초마다 새로 읽고, NEW 표시도 1분 뒤 사라지도록 다시 그려요
