@@ -62,7 +62,11 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
 <body>
 <header>
   <h1>🏆 오늘의 <span>랭킹</span> · AI 체험 부스</h1>
-  <div class="clock" id="clock"></div>
+  <div style="display:flex;align-items:center;gap:1vw">
+    <button type="button" id="fsBtn" onclick="toggleFullscreen()" style="color:#1e1b4b;background:#facc15;border:0;padding:8px 16px;border-radius:99px;cursor:pointer;font-family:inherit;font-weight:900;font-size:clamp(13px,1vw,18px);box-shadow:0 4px 12px rgba(250,204,21,.3)">⛶ 전체 화면</button>
+    <a id="homeBtn" href="../" style="color:#e2e8f0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:8px 16px;border-radius:99px;text-decoration:none;font-weight:800;font-size:clamp(13px,1vw,18px)">🕹️ 부스 홈으로</a>
+    <div class="clock" id="clock"></div>
+  </div>
 </header>
 <main>
   <section class="board">
@@ -164,7 +168,13 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
 </main>
 <footer>
   <span class="status" id="status"><i></i><span>연결 중…</span></span>
-  <div class="extra"><span>🌤️ 날씨 시뮬레이터도 해 보세요</span><div class="qr"><div id="qrWeather"></div></div></div>
+  <a class="extra" id="freeAppsLink" href="../?tab=free" style="color:inherit;text-decoration:none">
+    <span style="text-align:right">
+      <b style="color:#facc15;display:block;font-size:1.02em">✨ 점수 없이 즐기는 자유 체험 앱도 해 보세요! →</b>
+      <small style="color:#c7d2fe;font-weight:600;font-size:.82em">🎨 몽글몽글 그림일기 · 🙋 질문 모아 주세요 · 🌤️ 꼬마 기상청장 · 🏃 무한의 계단</small>
+    </span>
+    <div class="qr"><div id="qrFreeApps"></div></div>
+  </a>
 </footer>
 
 <script src="board.js"></script>
@@ -172,36 +182,69 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
 const $ = id=>document.getElementById(id);
 const esc = s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = ms=>{ const s = Math.round(ms/1000); return s>=60 ? `${Math.floor(s/60)}분 ${s%60}초` : `${s}초`; };
-const LINKS = {
-  spacing:'https://moodoocoding.github.io/261123_spacing-champion/',
-  space:'https://moodoocoding.github.io/261123_space-conqueror/',
-  weather:'https://moodoocoding.github.io/261123_weather-simulator/',
-  gugudan:'https://261123-gugudan-guardians.vercel.app/',
-  block:'https://moodoocoding.github.io/261123_block-puzzle/',
-  fight:'https://moodoocoding.github.io/261123_math-fighter/',
-  swing:'https://moodoocoding.github.io/261123_rope-swing/',
-  beat:'https://moodoocoding.github.io/261123_beat-smash/',
-  core:'https://moodoocoding.github.io/261123_core-defense/',
-  capital:'https://moodoocoding.github.io/261123_capital-quiz/',
-  brain:'https://moodoocoding.github.io/261123_brain-dash/',
-  runner:'https://moodoocoding.github.io/261123_quiz-runner/',
-  quiz:'https://moodoocoding.github.io/261123_triple-quiz-show/'
+const IS_GITHUB = location.hostname.endsWith('github.io');
+const BASE_ORIGIN = location.origin;
+const HOME_URL = IS_GITHUB ? 'https://moodoocoding.github.io/261123_ai-booth/' : `${BASE_ORIGIN}/`;
+const FREE_APPS_URL = `${HOME_URL}?tab=free`;
+$('homeBtn').href = HOME_URL;
+$('freeAppsLink').href = FREE_APPS_URL;
+const LINKS = IS_GITHUB ? {
+  spacing: 'https://moodoocoding.github.io/261123_spacing-champion/',
+  space: 'https://moodoocoding.github.io/261123_space-conqueror/',
+  freeApps: FREE_APPS_URL,
+  gugudan: 'https://261123-gugudan-guardians.vercel.app/',
+  block: 'https://moodoocoding.github.io/261123_block-puzzle/',
+  fight: 'https://moodoocoding.github.io/261123_math-fighter/',
+  swing: 'https://moodoocoding.github.io/261123_rope-swing/',
+  beat: 'https://moodoocoding.github.io/261123_beat-smash/',
+  core: 'https://moodoocoding.github.io/261123_core-defense/',
+  capital: 'https://moodoocoding.github.io/261123_capital-quiz/',
+  brain: 'https://moodoocoding.github.io/261123_brain-dash/',
+  runner: 'https://moodoocoding.github.io/261123_quiz-runner/',
+  quiz: 'https://moodoocoding.github.io/261123_triple-quiz-show/'
+} : {
+  spacing: `${BASE_ORIGIN}/games/spacing-champion/`,
+  space: `${BASE_ORIGIN}/games/space-conqueror/`,
+  freeApps: FREE_APPS_URL,
+  gugudan: 'https://261123-gugudan-guardians.vercel.app/',
+  block: `${BASE_ORIGIN}/games/block-puzzle/`,
+  fight: `${BASE_ORIGIN}/games/math-fighter/`,
+  swing: `${BASE_ORIGIN}/games/rope-swing/`,
+  beat: `${BASE_ORIGIN}/games/beat-smash/`,
+  core: `${BASE_ORIGIN}/games/core-defense/`,
+  capital: `${BASE_ORIGIN}/games/capital-quiz/`,
+  brain: `${BASE_ORIGIN}/games/brain-dash/`,
+  runner: `${BASE_ORIGIN}/games/quiz-runner/`,
+  quiz: `${BASE_ORIGIN}/games/triple-quiz-show/`
 };
-// 구구단 가디언즈는 자기 서버(Vercel)가 순위를 관리해서, 그 서버의 공개 순위를 15초마다 읽어 와요
-const GUGUDAN_API = 'https://261123-gugudan-guardians.vercel.app/api/leaderboard?scope=global&mode=normal&period=today&limit=10';
+// 구구단 가디언즈는 자기 서버(Vercel)가 순위를 관리해서, 동일 도메인 프록시(/api/gugudan-leaderboard) 또는 원격 API로 15초마다 읽어 와요
+const GUGUDAN_APIS = IS_GITHUB
+  ? ['https://261123-gugudan-guardians.vercel.app/api/leaderboard?scope=global&mode=normal&period=today&limit=10']
+  : ['/api/gugudan-leaderboard', 'https://261123-gugudan-guardians.vercel.app/api/leaderboard?scope=global&mode=normal&period=today&limit=10'];
 let gugudan = {rows:[], ok:null};
 async function loadGugudan(){
-  try{
-    const r = await fetch(GUGUDAN_API,{cache:'no-store'});
-    if(!r.ok) throw new Error(r.status);
-    const j = await r.json();
-    gugudan = {rows:Array.isArray(j.records) ? j.records : [], ok:true};
-  }catch(e){ console.warn('구구단 순위를 불러오지 못했어요',e); gugudan.ok = false; }
+  let loaded = false;
+  for(const api of GUGUDAN_APIS){
+    try{
+      const r = await fetch(api,{cache:'no-store'});
+      if(!r.ok) continue;
+      const j = await r.json();
+      if(Array.isArray(j.records)){
+        gugudan = {rows:j.records, ok:true};
+        loaded = true;
+        break;
+      }
+    }catch(e){}
+  }
+  if(!loaded){
+    console.warn('구구단 순위를 불러오지 못했어요');
+    gugudan.ok = false;
+  }
   render();
 }
 // QR 코드 (인터넷이 없으면 그리지 못해요)
 function qr(id,url){ try{ new QRCode($(id),{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ $(id).parentNode.style.display = 'none'; } }
-qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrWeather',LINKS.weather); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block); qr('qrFight',LINKS.fight); qr('qrSwing',LINKS.swing); qr('qrCore',LINKS.core); qr('qrQuiz',LINKS.quiz); qr('qrBeat',LINKS.beat); qr('qrCapital',LINKS.capital); qr('qrBrain',LINKS.brain); qr('qrRunner',LINKS.runner);
+qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrFreeApps',LINKS.freeApps); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block); qr('qrFight',LINKS.fight); qr('qrSwing',LINKS.swing); qr('qrCore',LINKS.core); qr('qrQuiz',LINKS.quiz); qr('qrBeat',LINKS.beat); qr('qrCapital',LINKS.capital); qr('qrBrain',LINKS.brain); qr('qrRunner',LINKS.runner);
 // 게임 칸을 두 줄로 나눠요 (칸이 늘어나면 한 줄에 들어가는 칸 수도 함께 늘어나요)
 // 여덟 칸보다 많으면 칸이 좁아지므로 '촘촘 모드'로 바꿔요: 이름과 점수만 크게, 자세한 설명은 숨김
 const nBoards = document.querySelectorAll('main .board').length;
@@ -318,6 +361,29 @@ function tick(){
     +`<small>${d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short',timeZone:'Asia/Seoul'})}</small>`;
 }
 tick(); setInterval(tick,10000);
+
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  }else{
+    document.exitFullscreen().catch(()=>{});
+  }
+}
+function syncFsBtn(){
+  const btn = $('fsBtn');
+  if(!btn) return;
+  const on = !!document.fullscreenElement;
+  btn.textContent = on ? '✕ 전체 화면 종료' : '⛶ 전체 화면';
+  btn.style.background = on ? 'rgba(255,255,255,.16)' : '#facc15';
+  btn.style.color = on ? '#f8fafc' : '#1e1b4b';
+}
+document.addEventListener('fullscreenchange', syncFsBtn);
+document.addEventListener('keydown', e=>{
+  if((e.key==='f' || e.key==='F') && !e.ctrlKey && !e.metaKey && !e.altKey){
+    e.preventDefault();
+    toggleFullscreen();
+  }
+});
 </script>
 </body>
 </html>
