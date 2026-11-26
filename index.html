@@ -56,6 +56,13 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
 .dense .row{grid-template-columns:2em 1fr auto;gap:.4vw;padding:.3vh .5vw;border-radius:12px}
 .dense .row .nm small{display:none}
 .dense .count{font-size:clamp(11px,.8vw,15px)}
+/* 칸이 15개 이상(한 줄에 8칸)일 때: 이름이 잘리지 않게 글자와 여백을 더 줄여요 */
+.tight{gap:1.2vh .6vw}
+.tight .board{padding:1.2vh .55vw;border-radius:18px}
+.tight .bhead h2{font-size:clamp(13px,.98vw,20px)}
+.tight .row{grid-template-columns:1.5em 1fr auto;gap:.3vw;padding:.3vh .35vw;font-size:clamp(12px,.84vw,16px)}
+.tight .row .new-tag{display:none}
+.tight .empty{font-size:clamp(13px,1.05vw,20px)}
 @media (max-width:900px){ main{grid-template-columns:1fr;grid-auto-rows:auto} body{padding:14px;height:auto;overflow:auto} .list{overflow:visible} }
 </style>
 </head>
@@ -173,6 +180,30 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:2vw;fon
     <div class="list" id="listExam"></div>
     <div class="count" id="countExam"></div>
   </section>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>🎯 맞춤법 명사수</h2><p>점수가 높은 순서 (맞춤법 과녁 쏘기)</p></div>
+      <div class="qr"><div id="qrSpell"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listSpell"></div>
+    <div class="count" id="countSpell"></div>
+  </section>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>🧊 겨냥도 터트리기</h2><p>점수가 높은 순서 (혼자 90초 도전)</p></div>
+      <div class="qr"><div id="qrCuboid"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listCuboid"></div>
+    <div class="count" id="countCuboid"></div>
+  </section>
+  <section class="board">
+    <div class="bhead">
+      <div class="t"><h2>👑 국어 만점 랭킹전</h2><p>점수가 높은 순서 (초성·줄임말 10문제)</p></div>
+      <div class="qr"><div id="qrKorean"></div><b>찍고 도전!</b></div>
+    </div>
+    <div class="list" id="listKorean"></div>
+    <div class="count" id="countKorean"></div>
+  </section>
 </main>
 <footer>
   <span class="status" id="status"><i></i><span>연결 중…</span></span>
@@ -210,7 +241,10 @@ const LINKS = IS_GITHUB ? {
   brain: 'https://moodoocoding.github.io/261123_brain-dash/',
   runner: 'https://moodoocoding.github.io/261123_quiz-runner/',
   quiz: 'https://moodoocoding.github.io/261123_triple-quiz-show/',
-  exam: 'https://moodoocoding.github.io/261123_exam-proctor/'
+  exam: 'https://moodoocoding.github.io/261123_exam-proctor/',
+  spell: 'https://ai-festival-booth.vercel.app/games/spelling-sniper/',
+  cuboid: 'https://ai-festival-booth.vercel.app/games/cuboid-pop/',
+  korean: 'https://ai-festival-booth.vercel.app/games/korean-master/'
 } : {
   spacing: `${BASE_ORIGIN}/games/spacing-champion/`,
   space: `${BASE_ORIGIN}/games/space-conqueror/`,
@@ -225,7 +259,10 @@ const LINKS = IS_GITHUB ? {
   brain: `${BASE_ORIGIN}/games/brain-dash/`,
   runner: `${BASE_ORIGIN}/games/quiz-runner/`,
   quiz: `${BASE_ORIGIN}/games/triple-quiz-show/`,
-  exam: `${BASE_ORIGIN}/games/exam-proctor/`
+  exam: `${BASE_ORIGIN}/games/exam-proctor/`,
+  spell: `${BASE_ORIGIN}/games/spelling-sniper/`,
+  cuboid: `${BASE_ORIGIN}/games/cuboid-pop/`,
+  korean: `${BASE_ORIGIN}/games/korean-master/`
 };
 // 구구단 가디언즈는 자기 서버(Vercel)가 순위를 관리해서, 동일 도메인 프록시(/api/gugudan-leaderboard) 또는 원격 API로 15초마다 읽어 와요
 const GUGUDAN_APIS = IS_GITHUB
@@ -254,14 +291,16 @@ async function loadGugudan(){
 }
 // QR 코드 (인터넷이 없으면 그리지 못해요)
 function qr(id,url){ try{ new QRCode($(id),{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ $(id).parentNode.style.display = 'none'; } }
-qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrFreeApps',LINKS.freeApps); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block); qr('qrFight',LINKS.fight); qr('qrSwing',LINKS.swing); qr('qrCore',LINKS.core); qr('qrQuiz',LINKS.quiz); qr('qrBeat',LINKS.beat); qr('qrCapital',LINKS.capital); qr('qrBrain',LINKS.brain); qr('qrRunner',LINKS.runner); qr('qrExam',LINKS.exam);
+qr('qrSpacing',LINKS.spacing); qr('qrSpace',LINKS.space); qr('qrFreeApps',LINKS.freeApps); qr('qrGugudan',LINKS.gugudan); qr('qrBlock',LINKS.block); qr('qrFight',LINKS.fight); qr('qrSwing',LINKS.swing); qr('qrCore',LINKS.core); qr('qrQuiz',LINKS.quiz); qr('qrBeat',LINKS.beat); qr('qrCapital',LINKS.capital); qr('qrBrain',LINKS.brain); qr('qrRunner',LINKS.runner); qr('qrExam',LINKS.exam); qr('qrSpell',LINKS.spell); qr('qrCuboid',LINKS.cuboid); qr('qrKorean',LINKS.korean);
 // 게임 칸을 두 줄로 나눠요 (칸이 늘어나면 한 줄에 들어가는 칸 수도 함께 늘어나요)
 // 여덟 칸보다 많으면 칸이 좁아지므로 '촘촘 모드'로 바꿔요: 이름과 점수만 크게, 자세한 설명은 숨김
 const nBoards = document.querySelectorAll('main .board').length;
 document.querySelector('main').style.setProperty('--cols',Math.ceil(nBoards/2));
 document.querySelector('main').classList.toggle('dense',nBoards>8);
+document.querySelector('main').classList.toggle('tight',nBoards>14);
 
-const spacing = createBoard('spacing'), space = createBoard('space'), block = createBoard('block'), fight = createBoard('fight'), swing = createBoard('swing'), beat = createBoard('beat'), coreB = createBoard('core'), quizB = createBoard('quiz'), capital = createBoard('capital'), brain = createBoard('brain'), runner = createBoard('runner'), exam = createBoard('exam');
+const spacing = createBoard('spacing'), space = createBoard('space'), block = createBoard('block'), fight = createBoard('fight'), swing = createBoard('swing'), beat = createBoard('beat'), coreB = createBoard('core'), quizB = createBoard('quiz'), capital = createBoard('capital'), brain = createBoard('brain'), runner = createBoard('runner'), exam = createBoard('exam'), spell = createBoard('spell'), cuboid = createBoard('cuboid'), korean = createBoard('korean');
+const SPELL_G = {low:'초등',high:'중등',all:'고등'}, SPELL_D = {easy:'1단계',normal:'2단계',hard:'3단계'}, CUBOID_D = {easy:'쉬움',normal:'보통',hard:'어려움'};
 const EXAM_DIFF = {low:'하',mid:'중',high:'상'};
 const spSort = (a,b)=>(b.c/b.n - a.c/a.n) || (b.c - a.c) || (a.t - b.t) || (a.at - b.at);
 const scScore = r=>r.t+r.wrong*10000;
@@ -353,6 +392,24 @@ function render(){
     <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>난이도 ${EXAM_DIFF[r.d]||''} · ${r.c}/${r.n}명 검거</small></span>
     <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`).join('') : '<p class="empty">첫 번째 명감독을 기다려요!</p>');
   $('countExam').textContent = `오늘 도전 ${ex.length}명`;
+  const sl = spell.today().sort(blSort);
+  put('listSpell', sl.length ? sl.slice(0,TOP).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${SPELL_G[r.g]||''} ${SPELL_D[r.d]||''} · ${r.c}/${r.n} 명중</small></span>
+    <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`).join('') : '<p class="empty">첫 번째 명사수를 기다려요!</p>');
+  $('countSpell').textContent = `오늘 도전 ${sl.length}명`;
+  const cb = cuboid.today().sort((a,b)=>b.score-a.score || a.miss-b.miss || a.at-b.at);
+  put('listCuboid', cb.length ? cb.slice(0,TOP).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${CUBOID_D[r.d]||''} · 맞음 ${r.hit} 틀림 ${r.miss}</small></span>
+    <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`).join('') : '<p class="empty">첫 번째 겨냥도 박사를 기다려요!</p>');
+  $('countCuboid').textContent = `오늘 도전 ${cb.length}명`;
+  const kr = korean.today().sort(blSort);
+  put('listKorean', kr.length ? kr.slice(0,TOP).map((r,i)=>`<div class="row r${i+1} ${isNew(r)?'new':''}">
+    <span class="rk">${medal(i)}</span>
+    <span class="nm">${esc(r.name)}${isNew(r)?'<span class="new-tag">NEW</span>':''}<small>${r.c}/10 정답 · ${(r.t/1000).toFixed(1)}초</small></span>
+    <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`).join('') : '<p class="empty">첫 번째 국어왕을 기다려요!</p>');
+  $('countKorean').textContent = `오늘 도전 ${kr.length}명`;
   // 구구단: 서버가 이미 순위대로 정렬해서 보내 줘요
   const g = gugudan.rows;
   put('listGugudan', g.length ? g.slice(0,TOP).map((r,i)=>{ const nw = Date.now()-r.created_at < 60000;
@@ -363,11 +420,11 @@ function render(){
     <span class="sc">${Number(r.score).toLocaleString('ko-KR')}점</span></div>`; }).join('')
     : `<p class="empty">${gugudan.ok===false ? '구구단 순위를 불러오는 중이에요…' : '첫 번째 가디언을 기다려요!'}</p>`);
   $('countGugudan').textContent = gugudan.ok===false ? '연결을 다시 시도하고 있어요' : `오늘 순위 ${g.length}명`;
-  const on = spacing.online && space.online && block.online && fight.online && swing.online && beat.online && coreB.online && capital.online && brain.online && runner.online && quizB.online && exam.online && gugudan.ok!==false;
+  const on = spacing.online && space.online && block.online && fight.online && swing.online && beat.online && coreB.online && capital.online && brain.online && runner.online && quizB.online && exam.online && spell.online && cuboid.online && korean.online && gugudan.ok!==false;
   $('status').className = 'status'+(on?' on':'');
   $('status').lastElementChild.textContent = on ? '실시간 연결됨 · 새 기록이 들어오면 바로 바뀌어요' : '인터넷 연결을 확인해 주세요 (이 기기 기록만 보여요)';
 }
-[spacing,space,block,fight,swing,beat,coreB,capital,brain,runner,quizB,exam].forEach(b=>{ b.onChange(render); b.init(); });
+[spacing,space,block,fight,swing,beat,coreB,capital,brain,runner,quizB,exam,spell,cuboid,korean].forEach(b=>{ b.onChange(render); b.init(); });
 render();
 loadGugudan();
 setInterval(loadGugudan,15000);   // 구구단 순위를 15초마다 새로 읽고, NEW 표시도 1분 뒤 사라지도록 다시 그려요
